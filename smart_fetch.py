@@ -10,7 +10,6 @@ def smart_fetch(url: str) -> str | None:
     """
 
     html = fetch_url(url)
-    html += "<!-- captcha -->"
 
     if html is None:
         print("[smart_fetch] Static fetch failed; using Playwright...")
