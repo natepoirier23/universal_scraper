@@ -1,0 +1,29 @@
+{
+  "item_selector": "article.product_pod",
+
+  "fields": {
+    "title": {
+      "selector": "h3 a",
+      "attr": "title"
+    },
+    "price": {
+      "selector": ".price_color",
+      "text": true
+    },
+    "rating": {
+      "selector": "p.star-rating",
+      "class_exclude": ["star-rating"]
+    },
+    "url": {
+      "selector": "h3 a",
+      "attr": "href",
+      "absolute": true
+    }
+  },
+
+  "pagination": {
+    "selector": "li.next a",
+    "attr": "href",
+    "absolute": true
+  }
+}

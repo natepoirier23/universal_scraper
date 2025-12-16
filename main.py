@@ -1,35 +1,25 @@
 import argparse
 import random
 import time
-
-from fetch import fetch_url
-from parsing import extract_books, extract_next_page_url, extract_book_details
+import json
+from parsing import parse_items, find_next_page
 from export import write_to_csv, write_to_json
 from smart_fetch import smart_fetch
 
 START_URL = "https://books.toscrape.com/catalogue/page-1.html"
 MAX_PAGES = 200
+BASE_URL = "https://books.toscrape.com/catalogue/"
+
 
 def parse_cli_args():
-    """
-    Parse command-line arguments.
-    """
-    parser = argparse.ArgumentParser(description="Scrape provided URL.")
-    
-    parser.add_argument(
-        "--url",
-        type=str,
-        required=False,
-        help="Target URL to scrape. Overrides default START_URL if provided.",
-    )
-
+    parser = argparse.ArgumentParser(description="Universal web scraper")
+    parser.add_argument("--url", type=str, help="Starting URL")
     parser.add_argument(
         "--format",
         choices=["csv", "json", "both"],
         default="csv",
-        help="Output format for scraped data",
+        help="Output format",
     )
-
     return parser.parse_args()
 
 
@@ -38,55 +28,36 @@ def main():
 
     records: list[dict] = []
     page_counter = 0
-
     next_url = args.url if args.url else START_URL
+
+    with open("configs/books_toscrape.json", "r", encoding="utf-8") as f:
+        config = json.load(f)
 
     while next_url:
         print(f"Scraping: {next_url}")
 
         html = smart_fetch(next_url)
         if html is None:
-            print("Failed to retrieve page; stopping crawl.")
+            print("Failed to retrieve page; stopping.")
             break
 
-        items = extract_books(html)
-        print(f"  Found {len(items)} items on this page.")
+        items = parse_items(html, config, BASE_URL)
+        print(f"  Found {len(items)} items")
 
         if not items:
-            print("No items found. This URL may not match expected site structure.")
+            print("No items found; site structure may differ.")
             break
-
-        # Detail page scraping
-        for item in items:
-            detail_url = item["url"]
-            detail_html = smart_fetch(detail_url)
-
-            if detail_html is None:
-                print(f"[WARN] Failed to fetch detail page: {detail_url}")
-                continue
-
-            detail_data = extract_book_details(detail_html)
-            item.update(detail_data)
-
-            time.sleep(random.uniform(0.5, 1.2))
 
         records.extend(items)
 
-        # Pagination
-        next_url = extract_next_page_url(html)
-
-        # Validate next URL
-        if next_url and not next_url.startswith("http"):
-            print("Next page URL invalid for current domain; stopping.")
-            break
+        next_url = find_next_page(html, config, BASE_URL)
 
         delay = random.uniform(1.0, 2.0)
-        print(f"Sleeping {delay:.2f}s before next request...")
         time.sleep(delay)
 
         page_counter += 1
         if page_counter >= MAX_PAGES:
-            print("Reached MAX_PAGES limit; stopping to avoid infinite loop.")
+            print("Reached MAX_PAGES; stopping.")
             break
 
     print(f"Total items collected: {len(records)}")
