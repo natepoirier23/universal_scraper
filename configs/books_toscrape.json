@@ -21,6 +21,25 @@
     }
   },
 
+  "detail_fields": {
+    "upc": {
+      "selector": "th:contains('UPC') + td",
+      "text": true
+    },
+    "availability": {
+      "selector": "table.table-striped tr:nth-child(6) td",
+      "text": true
+    },
+    "product_type": {
+      "selector": "table.table-striped tr:nth-child(2) td",
+      "text": true
+    },
+    "description": {
+      "selector": "#product_description ~ p",
+      "text": true
+    }
+  },
+
   "pagination": {
     "selector": "li.next a",
     "attr": "href",

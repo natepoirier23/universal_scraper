@@ -2,7 +2,7 @@ import argparse
 import random
 import time
 import json
-from parsing import parse_items, find_next_page
+from parsing import parse_items, find_next_page, parse_detail_page, parse_table_by_header
 from export import write_to_csv, write_to_json
 from smart_fetch import smart_fetch
 
@@ -83,6 +83,7 @@ def main():
             print("Failed to retrieve page; stopping.")
             break
 
+        # --- LIST PAGE PARSING ---
         items = parse_items(html, config, BASE_URL)
         print(f"  Found {len(items)} items")
 
@@ -90,8 +91,35 @@ def main():
             print("No items found; site structure may differ.")
             break
 
+        # --- DETAIL PAGE PARSING (OPTIONAL, CONFIG-DRIVEN) ---
+        detail_fields = config.get("detail_fields")
+
+        for item in items:
+            # If this site has no detail fields, skip detail scraping entirely
+            if not detail_fields:
+                break
+
+            detail_url = item.get("url")
+            if not detail_url:
+                continue
+
+            detail_html = smart_fetch(detail_url)
+            if detail_html is None:
+                print(f"[WARN] Failed to fetch detail page: {detail_url}")
+                continue
+
+            detail_data = parse_detail_page(detail_html, detail_fields)
+            table_data = parse_table_by_header(detail_html)
+
+            item.update(table_data)
+            item.update(detail_data)
+
+            # Polite delay between detail-page requests
+            time.sleep(random.uniform(0.5, 1.2))
+
         records.extend(items)
 
+        # --- PAGINATION ---
         next_url = find_next_page(html, config, BASE_URL)
 
         jitter = random.uniform(0.5, 1.5)

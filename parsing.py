@@ -52,3 +52,48 @@ def find_next_page(html: str, config: Dict[str, Any], base_url: str) -> str | No
 
     href = el.get(rules.get("attr", "href"), "").strip()
     return urljoin(base_url, href)
+
+def parse_detail_page(html: str, detail_fields: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Parse a detail page using selector rules.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    record = {}
+
+    for field, rules in detail_fields.items():
+        el = soup.select_one(rules["selector"])
+        if not el:
+            record[field] = ""
+            continue
+
+        if "attr" in rules:
+            value = el.get(rules["attr"], "").strip()
+        elif rules.get("text"):
+            value = el.get_text(strip=True)
+        else:
+            value = el.get_text(strip=True)
+
+        record[field] = value
+
+    return record
+
+def parse_table_by_header(html: str) -> dict:
+    """
+    Parse key-value tables where <th> is the field name and <td> is the value.
+    """
+    soup = BeautifulSoup(html, "html.parser")
+    data = {}
+
+    for row in soup.select("table.table-striped tr"):
+        th = row.find("th")
+        td = row.find("td")
+
+        if not th or not td:
+            continue
+
+        key = th.get_text(strip=True).lower().replace(" ", "_")
+        value = td.get_text(strip=True)
+
+        data[key] = value
+
+    return data
