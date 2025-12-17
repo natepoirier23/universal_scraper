@@ -1,0 +1,24 @@
+{
+  "item_selector": "div.quote",
+
+  "fields": {
+    "quote": {
+      "selector": "span.text",
+      "text": true
+    },
+    "author": {
+      "selector": "small.author",
+      "text": true
+    },
+    "tags": {
+      "selector": "div.tags a.tag",
+      "text": true
+    }
+  },
+
+  "pagination": {
+    "selector": "li.next a",
+    "attr": "href",
+    "absolute": true
+  }
+}
